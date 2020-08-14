@@ -243,38 +243,34 @@ class ShapeNetCore(_ShapeNet):
 
         return dest
 
-    def _get_taxonomy_path(self) -> Path:
+    def _get_metadata_path(self) -> Path:
         """
-        Returns the path to the taxonomy file.
+        Returns the path to the metadata file.
         """
 
-        return self.src.joinpath("taxonomy.json")
-    
+        return self.src.joinpath("metadata.json")
+
     def _get_directory_structure(self) -> str:
-        return "\ttaxonomy.json\n\twnid/\n\twnid/\n\t(etc.)"
+        return "\tmetadata.json\n\twnid/\n\twnid/\n\t(etc.)"
 
     def _assess_directory_structure(self) -> bool:
-        taxonomy = self._get_taxonomy_path()
-        if not taxonomy.exists():
+        metadata = self._get_metadata_path()
+        if not metadata.exists():
             return False
         return True
 
     def create_library(self) -> ModelLibrarian:
         # Load the taxonomy file.
-        taxonomy_raw = json.loads(self._get_taxonomy_path().read_text(encoding="utf-8"))
-        taxonomy = dict()
-        for synset in taxonomy_raw:
-            taxonomy.update({synset["synsetId"]: synset["name"].split(",")[0]})
+        metadata = json.loads(self._get_metadata_path().read_text(encoding="utf-8"))
         # Create a new library.
-        lib = self._get_librarian("ShapeNetCore")
+        lib = self._get_librarian("ShapeNetCoreVal")
 
         # Process each .obj file.
         for f in self.src.rglob("*.obj"):
-            wnid = f.parts[-4]
             record = ModelRecord()
             record.name = f.parts[-3]
-            record.wnid = "n" + wnid
-            record.wcategory = taxonomy[wnid]
+            record.wnid = metadata[record.name]['wnid']
+            record.wcategory = metadata[record.name]['wcategory']
             for platform in record.urls:
                 record.urls[platform] = self._get_url(record.wnid, record.name, platform)
 
